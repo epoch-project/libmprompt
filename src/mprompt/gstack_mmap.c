@@ -70,6 +70,9 @@ static uint8_t* mp_os_mmap_reserve(size_t size, int prot, bool* zeroed) {
   #if defined(PROT_MAX)
   prot |= PROT_MAX(PROT_READ | PROT_WRITE); // BSD
   #endif
+  #if defined(__CHERI__)
+  prot |= PROT_READ | PROT_WRITE; // https://github.com/CTSRD-CHERI/cheribsd/issues/1818
+  #endif
   int fd = -1;
   #if defined(VM_MAKE_TAG)
   // macOS: tracking anonymous page with a specific ID. (All up to 98 are taken officially but LLVM sanitizers have taken 99 and mimalloc 100)

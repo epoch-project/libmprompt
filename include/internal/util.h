@@ -89,8 +89,12 @@ static inline ssize_t mp_align_up(ssize_t x, ssize_t d) {
   return (d == 0 ? x : ((x + d - 1) / d) * d);
 }
 
+// Performing division / multiplication of pointers on CHERI platforms
+// breaks bounds compression, so calculate a difference then update.
+
 static inline uint8_t* mp_align_up_ptr(uint8_t* p, ssize_t d) {
-  return (uint8_t*)mp_align_up((ssize_t)p, d);
+  ssize_t diff = mp_align_up((ssize_t)p, d) - (ssize_t)p;
+  return p + diff;
 }
 
 static inline uintptr_t mp_align_down(uintptr_t x, size_t d) {
@@ -98,7 +102,8 @@ static inline uintptr_t mp_align_down(uintptr_t x, size_t d) {
 }
 
 static inline uint8_t* mp_align_down_ptr(uint8_t* p, size_t d) {
-  return (uint8_t*)mp_align_down((uintptr_t)p, d);
+  ssize_t diff = mp_align_down((uintptr_t)p, d) - (ssize_t)p;
+  return p + diff;
 }
 
 static inline ssize_t mp_max(ssize_t x, ssize_t y) {
@@ -112,15 +117,25 @@ static inline ssize_t mp_min(ssize_t x, ssize_t y) {
 
 /*------------------------------------------------------------------------------
   Guard cookie; used to encode ip and sp in a longjmp
+
+  Not suitable for CHERI platforms because it breaks bounds compression.
 ------------------------------------------------------------------------------*/
 extern uintptr_t mp_guard_cookie;
 
 static inline void* mp_guard(void* p) {
+#ifndef __CHERI__
   return (void*)((uintptr_t)p ^ mp_guard_cookie);
+#else
+  return p;
+#endif
 }
 
 static inline void* mp_unguard(void* p) {
+#ifndef __CHERI__
   return (void*)((uintptr_t)p ^ mp_guard_cookie);
+#else
+  return p;
+#endif
 }
 
 void mp_guard_init(void);

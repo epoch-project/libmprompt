@@ -150,18 +150,19 @@ struct mp_jmpbuf_s {
 // ARM64, Aarch64
 #elif defined(_M_ARM64) || defined(__aarch64__)
 
+// intptr_t works for both plain AArch64 and Morello
 struct mp_jmpbuf_s {
-  int64_t   reg_x18;
-  int64_t   reg_x19;
-  int64_t   reg_x20;
-  int64_t   reg_x21;
-  int64_t   reg_x22;
-  int64_t   reg_x23;
-  int64_t   reg_x24;
-  int64_t   reg_x25;
-  int64_t   reg_x26;
-  int64_t   reg_x27;
-  int64_t   reg_x28;
+  intptr_t  reg_x18;
+  intptr_t  reg_x19;
+  intptr_t  reg_x20;
+  intptr_t  reg_x21;
+  intptr_t  reg_x22;
+  intptr_t  reg_x23;
+  intptr_t  reg_x24;
+  intptr_t  reg_x25;
+  intptr_t  reg_x26;
+  intptr_t  reg_x27;
+  intptr_t  reg_x28;
   void*     reg_fp;
   void*     reg_ip;            
   void*     reg_sp;

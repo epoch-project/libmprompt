@@ -39,7 +39,7 @@ struct mp_gstack_s {
   ssize_t       initial_commit;     // initial committed memory (usually `os_page_size`)  
   ssize_t       committed;          // current committed estimate
   ssize_t       extra_size;         // size of extra allocated bytes.         
-  uint8_t       extra[1];           // extra allocated (holds the mp_prompt_t structure)
+  _Alignas(void *) uint8_t       extra[1];           // extra allocated (holds the mp_prompt_t structure)
 };
 
 
@@ -344,7 +344,7 @@ struct mp_gsave_s {
   ssize_t stack_size;
   void*   extra;        // mp_prompt_t structure
   ssize_t extra_size;
-  uint8_t data[1];      // combined data; starts with extra
+  _Alignas(void *) uint8_t data[1];      // combined data; starts with extra
 };
 
 // save a gstack
