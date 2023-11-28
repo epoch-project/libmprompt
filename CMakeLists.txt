@@ -155,7 +155,7 @@ endif()
 # -----------------------------------------------------------------------------
 # Flags
 # -----------------------------------------------------------------------------
-if((CMAKE_BUILD_TYPE MATCHES "Release") OR ((CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo") AND NOT APPLE))
+if(((CMAKE_BUILD_TYPE MATCHES "Release") OR ((CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo") AND NOT APPLE)) AND NOT (mp_proc MATCHES "aarch64c"))
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 endif()
 

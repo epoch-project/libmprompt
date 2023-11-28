@@ -152,7 +152,7 @@ mp_stack_enter:
   .cfi_startproc purecap
   .cfi_signal_frame             /* needed or else gdb does not allow switching frames to a lower address in the backtrace */
   
-  stp     cfp, clr, [csp, #32]! /* link frame (seems needed for libunwind) */
+  stp     cfp, clr, [csp, #-32]! /* link frame (seems needed for libunwind) */
   /* TODO: check these make some kind of sense? */
   .cfi_adjust_cfa_offset 64
   .cfi_rel_offset clr, 48
