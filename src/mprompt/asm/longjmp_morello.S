@@ -165,7 +165,7 @@ mp_stack_enter:
   
   /* set the cfa to point to our return jmpbuf_t (instead of into the stack); 
      the previous registers can now be restored (during unwind) using .cfi_offset directives */
-  .cfi_escape DW_def_cfa_expression, 5, DW_OP_bregx, DW_REG_csp, 16, DW_OP_deref, DW_OP_deref /* jmpbuf_t* cfa = [[sp,#16]] */  
+  .cfi_escape DW_def_cfa_expression, 6, DW_OP_bregx, DW_REG_csp, 16, DW_OP_deref, DW_OP_deref /* jmpbuf_t* cfa = [[sp,#16]] */
   .cfi_offset csp, 208          /* sp */
   .cfi_offset c30, 192          /* lr */
   .cfi_offset c29, 176          /* fp */
