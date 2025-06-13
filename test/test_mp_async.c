@@ -47,7 +47,7 @@ static __noinline void* as_stack_address(void* p) {
 static __noinline void* get_stack_top(void) {
 #if defined(__CHERI__)
   void *sp;
-  __asm__("mov %w0, csp" : "=r" (sp));
+  __asm__("mov %C0, csp" : "=r" (sp));
   return sp;
 #else
   void* top = NULL;
