@@ -213,6 +213,6 @@ mp_stack_enter:
     .asciz "GNU";
     .long 0xc0000000; /* GNU_PROPERTY_AARCH64_FEATURE_1_AND */
     .long 4; /* Four bytes of data */
-    .long 1; /* BTI is enabled */
+    .long 3; /* BTI and PAC are enabled */
     .long 0; /* padding for 8 byte alignment */
     .popsection; /* end the section */

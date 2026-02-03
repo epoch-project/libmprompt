@@ -182,7 +182,7 @@ if (NOT WIN32)
   endif()
 endif()
 
-list(APPEND mp_cflags -mbranch-protection=bti)
+list(APPEND mp_cflags -mbranch-protection=bti+pac-ret)
 
 # -----------------------------------------------------------------------------
 # Overview
