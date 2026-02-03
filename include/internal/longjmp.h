@@ -46,7 +46,7 @@ typedef void (mp_stack_start_fun_t)(void* arg, mp_unwind_frame_t* unwind_frame);
 mp_decl_externc mp_decl_returns_twice  void* mp_setjmp(mp_jmpbuf_t* save_jmp);
 mp_decl_externc mp_decl_noreturn       void  mp_longjmp(mp_jmpbuf_t* jmp);
 mp_decl_externc void* mp_stack_enter(void* stack_base, void* stack_commit_limit, void* stack_limit, 
-                                     mp_jmpbuf_t** return_jmp, mp_stack_start_fun_t* fun, void* arg);
+                                     mp_jmpbuf_t** return_jmp, mp_stack_start_fun_t* fun, void* arg, void* shadow_stack);
 
 
 
@@ -175,6 +175,7 @@ struct mp_jmpbuf_s {
   int64_t   reg_d13;
   int64_t   reg_d14; 
   int64_t   reg_d15;
+  int64_t   reg_gcspr;
 };
 
 

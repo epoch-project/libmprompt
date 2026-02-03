@@ -51,8 +51,14 @@ jmpbuf layout:
  136: d9
  ...
  184: d15
- 192: sizeof jmpbuf
+ 192: gcs
+ 200: sizeof jmpbuf
 */
+
+#define MRS_GCSPR(x) mrs x, s3_3_c2_c5_1
+#define GCSPOPM(x) sysl x, #3, c7, c7, #1
+#define GCSSS1(x) sys #3, c7, c7, #2, x
+#define GCSSS2(x) sysl x, #3, c7, c7, #3
 
 .align 2
 .global mp_setjmp
@@ -92,6 +98,10 @@ mp_setjmp:
   stp   d10, d11, [x0], #16
   stp   d12, d13, [x0], #16
   stp   d14, d15, [x0], #16
+  /* store GCS */
+  MRS_GCSPR (x10)
+  add   x10, x10, 8
+  str   x10, [x0], #8
   /* always return zero */
   mov   x0, #0
   ret                         /* jump to lr */
@@ -117,9 +127,35 @@ mp_longjmp:
   ldp   d10, d11, [x0], #16
   ldp   d12, d13, [x0], #16
   ldp   d14, d15, [x0], #16
+
+  /* Restore GCS */
+  ldr   x11, [x0], #8
+  MRS_GCSPR (x10)
+  mov   x0, x11
+scan:
+  cmp   x11, x10
+  beq   gcs_pop
+  sub   x11, x11, 8
+  ldr   x1, [x11]
+  and   x2, x11, 0xfffffffffffff000
+  orr   x2, x2, 1
+  cmp   x1, x2
+  bne   scan
+
+  add   x10, x11, 8
+  GCSSS1 (x11)
+  GCSSS2 (xzr)
+gcs_pop:
+  cmp   x10, x0
+  beq   gcs_done
+  GCSPOPM (xzr)
+  add   x10, x10, 8
+  b     gcs_pop
+gcs_done:
+
   /* always return 1 */
   mov   x0, #1
-  ret                         /* jump to lr */
+  /*ret*/ br lr                         /* jump to lr */
 
 
 /* switch stack 
@@ -129,6 +165,7 @@ mp_longjmp:
    x3: jmpbuf_t** return point
    x4: function to run
    x5: argument to pass to the function 
+   x6: shadow stack
 */
 /* DWARF unwind info instructions: <http://dwarfstd.org/doc/DWARF5.pdf> 
    Register mapping: <file:///C:/Users/daan/AppData/Local/Temp/IHI0057B_aadwarf64.pdf>
@@ -183,6 +220,26 @@ mp_stack_enter:
   stp     x29, x30, [sp, #16]   /* mimic call on new stack: sp[24] = x30, sp[16] = lr */
   str     x3, [sp, #8]          /* save jmpbuf_t** on the stack for (future) unwinding: x3 == [sp+8]  */
   add     x29, sp, #16          /* set our frame pointer to sp[16] */
+
+  mov     x0, x6
+enter_gcs_scan:
+  ldr     x1, [x0]
+  and     x2, x1, 0xfffffffffffff000
+  orr     x2, x2, 1
+  cmp     x1, x2
+  beq enter_gcs_cap_found
+  sub     x0, x0, 8
+  b enter_gcs_scan
+enter_gcs_cap_found:
+  GCSSS1 (x0)
+  GCSSS2 (xzr)
+enter_gcs_pop:
+  cmp     x0, x6
+  beq     enter_gcs_done
+  GCSPOPM (xzr)
+  add     x0, x0, 8
+  b       enter_gcs_pop
+enter_gcs_done:
   
   mov     x0, x5                /* argument to x0 */
   mov     x1, fp                /* pass unwind frame */

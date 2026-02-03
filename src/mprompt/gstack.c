@@ -10,6 +10,7 @@
   committed memory at minimum (and 2 on Windows)
 -----------------------------------------------------------------------------*/
 
+#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include "mprompt.h"
@@ -35,6 +36,7 @@ struct mp_gstack_s {
   uint8_t*      full;               // stack reserved memory (including noaccess gaps)
   ssize_t       full_size;          // (for now always fixed to be `os_gstack_size`)
   uint8_t*      stack;              // stack inside the full area (without gaps)
+  uint8_t*      shadow_stack;
   ssize_t       stack_size;         // actual available total stack size (includes reserved space) (depends on platform, but usually `os_gstack_size - 2*mp_gstack_gap`)
   ssize_t       initial_commit;     // initial committed memory (usually `os_page_size`)  
   ssize_t       committed;          // current committed estimate
@@ -188,6 +190,14 @@ static void mp_gstack_clear_delayed(void) {
   mp_assert_internal(_mp_gstack_delayed_free == NULL);
 }
 
+# define __NR_map_shadow_stack 453
+static void *
+map_shadow_stack (void *addr, size_t size, unsigned long flags)
+{
+  return (void *) syscall (__NR_map_shadow_stack, addr, size, flags);
+}
+
+
 // Allocate a growable stacklet.
 mp_gstack_t* mp_gstack_alloc(ssize_t extra_size, void** extra)
 {
@@ -257,6 +267,9 @@ mp_gstack_t* mp_gstack_alloc(ssize_t extra_size, void** extra)
     g->full = full;
     g->full_size = os_gstack_size;
     g->stack = stk;
+    g->shadow_stack = (uint8_t *) map_shadow_stack(NULL, 65536, 3);
+    if (g->shadow_stack == (void *)-1) abort();
+    g->shadow_stack = g->shadow_stack + 65536 - 16;
     g->stack_size = stk_size;
     g->initial_commit = g->committed = initial_commit;
     g->extra_size = extra_size;
@@ -275,6 +288,7 @@ void mp_gstack_enter(mp_gstack_t* g, mp_jmpbuf_t** return_jmp, mp_stack_start_fu
   uint8_t* base_commit_limit = mp_push(base, g->committed, NULL);
   uint8_t* base_limit = mp_push(base, g->stack_size, NULL);
   uint8_t* base_entry_sp = base;
+  uint8_t* shadow_stack = g->shadow_stack;
 #if _WIN32
   if (os_use_gpools || os_gstack_grow_fast) {
     // set an artificially low stack limit so our page fault handler gets called and we can:
@@ -286,7 +300,7 @@ void mp_gstack_enter(mp_gstack_t* g, mp_jmpbuf_t** return_jmp, mp_stack_start_fu
     base_limit = mp_push(base_commit_limit, guard_size, NULL);
   }
 #endif
-  mp_stack_enter(base_entry_sp, base_commit_limit, base_limit, return_jmp, fun, arg);  
+  mp_stack_enter(base_entry_sp, base_commit_limit, base_limit, return_jmp, fun, arg, shadow_stack);
 }
 
 
