@@ -75,6 +75,7 @@ jmpbuf layout:
 /* called with x0: &jmp_buf */
 _mp_setjmp:
 mp_setjmp:                 
+  bti   c
   stp   x18, x19, [x0], #16
   stp   x20, x21, [x0], #16
   stp   x22, x23, [x0], #16
@@ -100,6 +101,7 @@ mp_setjmp:
 /* called with x0: &jmp_buf */
 _mp_longjmp:
 mp_longjmp:                  
+  bti   c
   ldp   x18, x19, [x0], #16
   ldp   x20, x21, [x0], #16
   ldp   x22, x23, [x0], #16
@@ -148,6 +150,8 @@ _mp_stack_enter:
 mp_stack_enter:
   .cfi_startproc 
   .cfi_signal_frame             /* needed or else gdb does not allow switching frames to a lower address in the backtrace */
+
+  bti c
   
   stp     fp, lr, [sp, #-16]!    /* link frame (seems needed for libunwind) */
   .cfi_adjust_cfa_offset 32
