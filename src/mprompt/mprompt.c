@@ -288,8 +288,8 @@ static void* mp_resume_label;
 // Checked longjmp to a known location (with a known stack pointer)
 static mp_decl_noreturn void mp_checked_longjmp(void* label, void* sp, mp_jmpbuf_t* jmp) {
   // security: check if we return to the designated label
-  if (mp_unlikely(mp_unguard(label) != jmp->reg_ip)) {
-    mp_fatal_message(EFAULT, "potential stack corruption detected: expected ip %p, but found %p\n", mp_unguard(label), jmp->reg_ip);
+  if (mp_unlikely(mp_unguard(label) != mp_clean_ip(jmp->reg_ip))) {
+    mp_fatal_message(EFAULT, "potential stack corruption detected: expected ip %p, but found %p\n", mp_unguard(label), mp_clean_ip(jmp->reg_ip));
   }
   if (mp_unlikely(mp_unguard(sp) != jmp->reg_sp)) {
     mp_fatal_message(EFAULT, "potential stack corruption detected: expected sp %p, but found %p\n", mp_unguard(sp), jmp->reg_sp);
@@ -382,7 +382,7 @@ static mp_decl_noinline void* mp_prompt_resume(mp_prompt_t * p, void* arg) {
   else {
     // security: longjmp can only jump to a known code point
     if (mp_unlikely(mp_return_label == NULL)) { 
-      mp_return_label = mp_guard(ret.jmp.reg_ip); 
+      mp_return_label = mp_guard(mp_clean_ip(ret.jmp.reg_ip)); 
     }
 
     mp_assert(p->parent == NULL);
@@ -512,7 +512,7 @@ void* mp_yield(mp_prompt_t* p, mp_yield_fun_t* fun, void* arg) {
   else {
     // security: can only longjmp to a static location
     if (mp_unlikely(mp_resume_label == NULL)) {
-      mp_resume_label = mp_guard(res.jmp.reg_ip);
+      mp_resume_label = mp_guard(mp_clean_ip(res.jmp.reg_ip));
     }
     // YR: yielding to prompt, or resumed prompt (P)
     void* sp;

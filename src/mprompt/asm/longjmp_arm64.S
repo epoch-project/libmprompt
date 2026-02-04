@@ -56,17 +56,20 @@ jmpbuf layout:
 
 .align 2
 .global mp_setjmp
+.global mp_clean_ip
 .global mp_longjmp
 .global mp_stack_enter
 
 #if defined(__MACH__)
 .global _mp_setjmp
+.global _mp_clean_ip
 .global _mp_longjmp
 .global _mp_stack_enter
 #endif
 
 #if !defined(__clang__)
 .type mp_setjmp,%function
+.type mp_clean_ip,%function
 .type mp_longjmp,%function
 .type mp_stack_enter,%function
 .type abort,%function
@@ -75,7 +78,7 @@ jmpbuf layout:
 /* called with x0: &jmp_buf */
 _mp_setjmp:
 mp_setjmp:                 
-  bti   c
+  paciasp
   stp   x18, x19, [x0], #16
   stp   x20, x21, [x0], #16
   stp   x22, x23, [x0], #16
@@ -95,8 +98,22 @@ mp_setjmp:
   stp   d14, d15, [x0], #16
   /* always return zero */
   mov   x0, #0
+  /* Remove PAC from lr; we could have used pacia to a different register for
+   * the stored version but then we'd need a separate bti, too. */
+  autiasp
   ret                         /* jump to lr */
 
+/* Remove the PAC from a stored lr */
+_mp_clean_ip:
+mp_clean_ip:
+  bti   c
+  /* take care to use one of the hint space instructions; could maybe feature check instead? */
+  mov   x16, x30
+  mov   x30, x0
+  xpaclri
+  mov   x0, x30
+  mov   x30, x16
+  ret
 
 /* called with x0: &jmp_buf */
 _mp_longjmp:
@@ -121,6 +138,7 @@ mp_longjmp:
   ldp   d14, d15, [x0], #16
   /* always return 1 */
   mov   x0, #1
+  autiasp
   ret                         /* jump to lr */
 
 
@@ -151,7 +169,7 @@ mp_stack_enter:
   .cfi_startproc 
   .cfi_signal_frame             /* needed or else gdb does not allow switching frames to a lower address in the backtrace */
 
-  bti c
+  paciasp                       /* I'm not really sure if this is necessary, but as we're storing it in the link frame, it seems best */
   
   stp     fp, lr, [sp, #-16]!    /* link frame (seems needed for libunwind) */
   .cfi_adjust_cfa_offset 32

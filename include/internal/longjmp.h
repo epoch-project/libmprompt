@@ -146,6 +146,7 @@ struct mp_jmpbuf_s {
   uint16_t  context_padding;
 };
 
+static inline void *mp_clean_ip(void *ip) { return ip; }
 
 // ARM64, Aarch64
 #elif defined(_M_ARM64) || defined(__aarch64__)
@@ -177,6 +178,7 @@ struct mp_jmpbuf_s {
   int64_t   reg_d15;
 };
 
+mp_decl_externc void *mp_clean_ip(void *ip);
 
 #else
 #error "unsupported platform"
