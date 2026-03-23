@@ -43,6 +43,8 @@
 // We need atomic operations for the `gpool` on systems that do not have overcommit.
 #include "internal/atomic.h"
 
+#include <cheri.h>
+
 //----------------------------------------------------------------------------------
 // gpool
 //----------------------------------------------------------------------------------
@@ -140,7 +142,7 @@ static uint8_t* mp_gpool_alloc_stack(uint8_t** stk, ssize_t* stk_size) {
       if (block_idx <= 0 || block_idx >= gp->block_count) return NULL; // paranoia
       uint8_t* p = ((uint8_t*)gp + (block_idx * gp->block_size));
       //mp_trace_message("gpool_alloc: gp: %p, p: %p, block_idx: %zd, sp: %zd\n", gp, p, block_idx, sp);
-      *stk = p;
+      *stk = (uint8_t *)cheri_bounds_set(p, gp->block_size - gp->gap_size);
       *stk_size = gp->block_size - gp->gap_size;
       return p;
     }
